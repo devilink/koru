@@ -1,0 +1,19 @@
+{
+  "name": "@project-koru/simulator",
+  "version": "1.0.0",
+  "description": "Validation Simulator for Project Koru",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/SimulationRunner.js",
+    "dev": "ts-node src/SimulationRunner.ts"
+  },
+  "dependencies": {
+    "@koru/bloomcore": "workspace:*",
+    "@koru/bloomemotion": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.1"
+  }
+}

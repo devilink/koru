@@ -1,0 +1,10 @@
+{
+    "main":  "dist/index.js",
+    "types":  "dist/index.d.ts",
+    "name":  "@koru/bloomplant",
+    "version":  "1.0.0",
+    "scripts":  {
+                    "dev":  "tsc --watch",
+                    "build":  "tsc"
+                }
+}

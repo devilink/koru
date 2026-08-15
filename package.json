@@ -1,0 +1,17 @@
+{
+  "name": "project-koru",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Koru Modular Robotics OS",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build",
+    "start": "pnpm -r run start"
+  },
+  "dependencies": {
+    "bash": "^0.0.1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "main":  "dist/index.js",
+    "types":  "dist/index.d.ts",
+    "name":  "@koru/bloomvision",
+    "version":  "1.0.0",
+    "scripts":  {
+                    "dev":  "tsc --watch",
+                    "build":  "tsc"
+                }
+}

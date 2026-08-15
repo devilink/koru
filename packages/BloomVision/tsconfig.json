@@ -1,0 +1,22 @@
+{
+    "include":  [
+                    "src/**/*"
+                ],
+    "compilerOptions":  {
+                            "forceConsistentCasingInFileNames":  true,
+                            "outDir":  "./dist",
+                            "moduleResolution":  "node",
+                            "baseUrl":  ".",
+                            "declaration":  true,
+                            "strict":  true,
+                            "target":  "ES2022",
+                            "esModuleInterop":  true,
+                            "skipLibCheck":  true,
+                            "module":  "CommonJS",
+                            "paths":  {
+                                          "@koru/*":  [
+                                                          "../*/src"
+                                                      ]
+                                      }
+                        }
+}
