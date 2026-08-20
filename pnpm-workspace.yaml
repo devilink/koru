@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'BloomFace'
 allowBuilds:
   '0': sharp
   '1': unrs-resolver

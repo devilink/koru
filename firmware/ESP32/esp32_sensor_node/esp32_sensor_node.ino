@@ -1,108 +1,95 @@
+#include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>
-#include <WebSocketsClient.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
-#include "bloom_emotions_bitmaps.h"
+#include "secrets.h"
 
-WebServer webServer(80);
-WebSocketsServer wsServer(81);
+// WebSockets Server on port 81
+WebSocketsServer webSocket = WebSocketsServer(81);
 
-const char* html_page PROGMEM = R"HTML(
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-<title>BloomFace Remote Display</title>
-<style>
-  body { background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-  canvas { width: 100%; max-width: 512px; image-rendering: pixelated; border: 2px solid #333; border-radius: 10px; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
-</style>
-</head>
-<body>
-<canvas id="oled" width="128" height="64"></canvas>
-<script>
-  const canvas = document.getElementById('oled');
-  const ctx = canvas.getContext('2d');
-  const imgData = ctx.createImageData(128, 64);
-  const ws = new WebSocket(`ws://${location.hostname}:81/`);
-  ws.binaryType = 'arraybuffer';
-  
-  ws.onmessage = function(event) {
-    const bytes = new Uint8Array(event.data);
-    if(bytes.length !== 1024) return;
+void handleWebSocketMessage(uint8_t num, uint8_t * payload, size_t length) {
+  // Parse incoming JSON message
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, payload, length);
+
+  if (error) {
+    Serial.print("[ESP32] JSON Parse Error: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  const char* msgType = doc["type"];
+  if (!msgType) {
+    Serial.println("[ESP32] Invalid message: missing 'type'");
+    return;
+  }
+
+  if (strcmp(msgType, "PING") == 0) {
+    Serial.println("[ESP32] PING received");
+    long timestamp = doc["timestamp"] | 0;
     
-    let dataIdx = 0;
-    for(let i = 0; i < 1024; i++) {
-      let b = bytes[i];
-      for(let bit = 0; bit < 8; bit++) {
-        let pixelOn = (b & (1 << bit)) !== 0;
-        let c = pixelOn ? 255 : 0;
-        imgData.data[dataIdx++] = c;
-        imgData.data[dataIdx++] = c;
-        imgData.data[dataIdx++] = c;
-        imgData.data[dataIdx++] = 255;
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-  };
-</script>
-</body>
-</html>
-)HTML";
+    // Respond with PONG
+    StaticJsonDocument<128> outDoc;
+    outDoc["type"] = "PONG";
+    outDoc["timestamp"] = timestamp;
+    
+    String outStr;
+    serializeJson(outDoc, outStr);
+    webSocket.sendTXT(num, outStr);
+    Serial.println("[ESP32] PONG sent");
+    
+  } else if (strcmp(msgType, "COMMAND") == 0) {
+    const char* command = doc["command"];
+    Serial.printf("[ESP32] COMMAND received: %s\n", command ? command : "null");
+    
+    // Respond with COMMAND_ACK
+    StaticJsonDocument<128> outDoc;
+    outDoc["type"] = "COMMAND_ACK";
+    outDoc["command"] = command;
+    
+    String outStr;
+    serializeJson(outDoc, outStr);
+    webSocket.sendTXT(num, outStr);
+    Serial.println("[ESP32] COMMAND_ACK sent");
+    
+  } else {
+    Serial.printf("[ESP32] Unknown message type: %s\n", msgType);
+  }
+}
 
-int current_frame = 0;
-String current_animation = "BLINK";
-unsigned long lastOledTime = 0;
-const int OLED_FRAME_INTERVAL = 33; // ~30 fps
-
-const char* ssid = "iPhone";
-const char* password = "password";
-const char* websocket_server = "192.168.1.100"; // Replace with your BloomOS IP
-const uint16_t websocket_port = 4000;
-
-WebSocketsClient webSocket;
-
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
-      Serial.println("[ESP32] Disconnected from BloomOS");
+      Serial.printf("[ESP32] Phone [%u] disconnected\n", num);
       break;
-    case WStype_CONNECTED:
-      Serial.println("[ESP32] Connected to BloomOS WebSocket");
-      break;
-    case WStype_TEXT: {
-      String msg = (char*)payload;
       
-      // Parse BloomOS FACE_STATE
-      if (msg.startsWith("42[\"FACE_STATE\"")) {
-        int jsonStart = msg.indexOf('{');
-        int jsonEnd = msg.lastIndexOf('}');
-        if (jsonStart != -1 && jsonEnd != -1) {
-          String jsonString = msg.substring(jsonStart, jsonEnd + 1);
-          StaticJsonDocument<256> doc;
-          DeserializationError error = deserializeJson(doc, jsonString);
-          
-          if (!error) {
-            String newAnim = doc["animation"] | doc["emotion"] | "BLINK";
-            
-            // Map fallback states
-            if (newAnim == "idle") newAnim = "BLINK";
-            else if (newAnim == "happy") newAnim = "LOVE";
-            else if (newAnim == "sad") newAnim = "CRY";
-            else if (newAnim == "dizzy") newAnim = "SLEEP";
-            else if (newAnim == "surprised") newAnim = "UNCOMFORTABLE";
-            
-            if (newAnim != current_animation) {
-              current_animation = newAnim;
-              current_frame = 0; // Reset animation when switching
-              Serial.printf("[ESP32] Switching to animation: %s\n", current_animation.c_str());
-            }
-          }
-        }
-      }
+    case WStype_CONNECTED: {
+      IPAddress ip = webSocket.remoteIP(num);
+      Serial.printf("[ESP32] Phone [%u] connected from %d.%d.%d.%d\n", num, ip[0], ip[1], ip[2], ip[3]);
+      
+      // Send DEVICE_INFO upon connection
+      StaticJsonDocument<256> outDoc;
+      outDoc["type"] = "DEVICE_INFO";
+      outDoc["device"] = "ESP32_KORU_BODY";
+      outDoc["firmware"] = "0.1.0";
+      
+      String outStr;
+      serializeJson(outDoc, outStr);
+      webSocket.sendTXT(num, outStr);
+      Serial.println("[ESP32] Sent DEVICE_INFO");
       break;
     }
+    
+    case WStype_TEXT:
+      handleWebSocketMessage(num, payload, length);
+      break;
+      
+    case WStype_BIN:
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
     default:
       break;
   }
@@ -110,80 +97,32 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void setup() {
   Serial.begin(115200);
+  delay(1000);
   
-  WiFi.begin(ssid, password);
+  Serial.println("\n[ESP32] Booting...");
+
+  // Connect to Wi-Fi
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print("[ESP32] WiFi connecting...");
+  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("[ESP32] Connecting to WiFi...");
+    delay(500);
+    Serial.print(".");
   }
-  Serial.println("[ESP32] Connected to WiFi");
-  Serial.print("Local IP: ");
+  
+  Serial.println("\n[ESP32] WiFi connected");
+  Serial.print("[ESP32] IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Connect to the WebSocket server
-  webSocket.begin(websocket_server, websocket_port, "/socket.io/?EIO=4&transport=websocket");
+  // Start WebSocket Server
+  webSocket.begin();
   webSocket.onEvent(webSocketEvent);
-  webSocket.setReconnectInterval(5000);
-  
-  // Setup HTTP Server for Phone Display
-  webServer.on("/", []() {
-    webServer.send(200, "text/html", html_page);
-  });
-  webServer.begin();
-  
-  // Setup WebSocket Server for streaming OLED frames
-  wsServer.begin();
+  Serial.println("[ESP32] WebSocket server started on port 81");
 }
 
 void loop() {
   webSocket.loop();
-  webServer.handleClient();
-  wsServer.loop();
   
-  // Non-blocking OLED animation update
-  if (millis() - lastOledTime >= OLED_FRAME_INTERVAL) {
-    lastOledTime = millis();
-    
-    const unsigned char* frame_data = nullptr;
-    int max_frames = 1;
-    
-    if (current_animation == "BLINK") {
-      max_frames = blink_frame_count;
-      frame_data = epd_bitmap_blink[current_frame];
-    } else if (current_animation == "LOVE") {
-      max_frames = love_frame_count;
-      frame_data = epd_bitmap_love[current_frame];
-    } else if (current_animation == "CRY") {
-      max_frames = cry_frame_count;
-      frame_data = epd_bitmap_cry[current_frame];
-    } else if (current_animation == "SLEEP") {
-      max_frames = sleep_frame_count;
-      frame_data = epd_bitmap_sleep[current_frame];
-    } else if (current_animation == "UNCOMFORTABLE") {
-      max_frames = uncomfortable_frame_count;
-      frame_data = epd_bitmap_uncomfortable[current_frame];
-    } else {
-      // Fallback
-      max_frames = blink_frame_count;
-      frame_data = epd_bitmap_blink[current_frame];
-    }
-
-    if (frame_data != nullptr) {
-      wsServer.broadcastBIN(frame_data, 1024);
-    }
-
-    current_frame++;
-    if (current_frame >= max_frames) { 
-      current_frame = 0; 
-    }
-  }
-  
-  // Simulate a tilt every 20 seconds
-  static unsigned long lastTiltTime = 0;
-  if (millis() - lastTiltTime > 20000) {
-    lastTiltTime = millis();
-    Serial.println("[ESP32] Simulating tilt detected...");
-    String msg = "42[\"ESP32_TILT\",{\"axis\":\"x\",\"degrees\": 45}]";
-    webSocket.sendTXT(msg);
-  }
+  // To avoid watchdog resets, yield occasionally if doing heavy processing
+  yield();
 }

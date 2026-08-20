@@ -88,7 +88,7 @@ describe('BloomEmotion Comprehensive Verification', () => {
 
     it('returns empty deltas if no rules match', () => {
       const rules = new EmotionRules();
-      const deltas = rules.evaluateRules('NON_EXISTENT_EVENT', {});
+      const deltas = rules.evaluateRules('NON_EXISTENT_EVENT' as any, {});
       expect(Object.keys(deltas).length).toBe(0);
     });
   });
