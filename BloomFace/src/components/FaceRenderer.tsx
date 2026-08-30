@@ -1,13 +1,25 @@
-import React from 'react';
-import { FaceState } from '../state/FaceState';
+import React, { useState, useEffect } from 'react';
+import { FaceState, initialFaceState } from '../state/FaceState';
 import { EyeRenderer } from './EyeRenderer';
 import { MouthRenderer } from './MouthRenderer';
+import { AnimationController } from '../animation/AnimationController';
 
 interface FaceRendererProps {
-  state: FaceState;
+  controllerRef: React.MutableRefObject<AnimationController | null>;
 }
 
-export const FaceRenderer: React.FC<FaceRendererProps> = ({ state }) => {
+export const FaceRenderer: React.FC<FaceRendererProps> = ({ controllerRef }) => {
+  const [state, setState] = useState<FaceState>(initialFaceState);
+
+  useEffect(() => {
+    if (controllerRef.current) {
+      controllerRef.current.getMixer().setOnStateUpdate((newState) => {
+        setState(newState);
+      });
+      setState(controllerRef.current.getMixer().getBaseState());
+    }
+  }, [controllerRef]);
+
   return (
     <div style={{
       width: '100%',

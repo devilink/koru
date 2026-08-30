@@ -18,7 +18,6 @@ const orientationManager = new OrientationManager();
 const robotConnection = new RobotConnection();
 
 export const App: React.FC = () => {
-  const [faceState, setFaceState] = useState<FaceState>(initialFaceState);
   const [isInitialized, setIsInitialized] = useState(false);
   
   // Debug UI State
@@ -45,9 +44,8 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     controllerRef.current = new AnimationController((newState) => {
-      setFaceState(newState);
+      // Intentionally left empty. State updates are now handled locally in FaceRenderer.
     });
-    setFaceState(controllerRef.current.getMixer().getBaseState());
 
     // Listen to robot messages for stats
     const unsubMsg = robotConnection.onMessage((msg: RobotMessage) => {
@@ -173,7 +171,7 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {isInitialized && <FaceRenderer state={faceState} />}
+      {isInitialized && <FaceRenderer controllerRef={controllerRef} />}
       
       {/* Dev UI overlay */}
       {isInitialized && showDebug && (

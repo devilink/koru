@@ -16,6 +16,10 @@ export class AnimationMixer {
     this.idleSystem = new IdleSystem(this);
   }
 
+  public setOnStateUpdate(onStateUpdate: (state: FaceState) => void) {
+    this.onStateUpdate = onStateUpdate;
+  }
+
   public getBaseState(): FaceState {
     return this.baseState;
   }

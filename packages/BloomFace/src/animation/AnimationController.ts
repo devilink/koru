@@ -20,7 +20,7 @@ export class AnimationController {
   private lastTime = 0;
   
   // Transition speed for changing presets
-  private transitionSpeed = 5.0; // multiplier per second
+  private transitionSpeed = 15.0; // multiplier per second
 
   // Callback to notify UI of state changes
   private onUpdateCallback?: (state: FaceState) => void;
