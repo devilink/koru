@@ -1,0 +1,57 @@
+[project]
+name = "companion-bot"
+version = "0.1.0"
+description = "Privacy-first local companion robot platform"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "sqlalchemy",
+    "websockets",
+    "openvino",
+    "opencv-python",
+    "mediapipe",
+    "hsemotion",
+    "langgraph",
+    "langchain-core",
+    "langchain-community",
+    "qdrant-client",
+    "cryptography",
+    "pytest",
+    "pytest-asyncio",
+    "paho-mqtt",
+    "sentence-transformers"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pre-commit",
+    "httpx"
+]
+
+[tool.setuptools]
+packages = ["apps", "packages"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+asyncio_mode = "auto"

@@ -13,5 +13,8 @@
   },
   "dependencies": {
     "bash": "^0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
   }
 }

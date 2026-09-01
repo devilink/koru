@@ -6,3 +6,5 @@ allowBuilds:
   '0': sharp
   '1': unrs-resolver
   esbuild: true
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
