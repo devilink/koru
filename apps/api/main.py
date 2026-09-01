@@ -66,6 +66,53 @@ def camera_loop():
 threading.Thread(target=camera_loop, daemon=True).start()
 
 current_frame_b64 = ""
+chat_queue = []
+
+def microphone_loop():
+    import time
+    try:
+        import speech_recognition as sr
+        import pyttsx3
+    except ImportError:
+        print("Please install SpeechRecognition and pyttsx3")
+        return
+        
+    try:
+        tts_engine = pyttsx3.init()
+        tts_engine.setProperty('rate', 150)
+    except Exception as e:
+        print(f"Failed to init TTS: {e}")
+        tts_engine = None
+        
+    recognizer = sr.Recognizer()
+    
+    while True:
+        try:
+            with sr.Microphone() as source:
+                recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                audio = recognizer.listen(source, timeout=1, phrase_time_limit=10)
+                
+            text = recognizer.recognize_google(audio)
+            if text:
+                print(f"Heard: {text}")
+                chat_queue.append({"sender": "You", "text": text})
+                
+                response = agent.chat(text)
+                chat_queue.append({"sender": "Bot", "text": response})
+                
+                if tts_engine:
+                    tts_engine.say(response)
+                    tts_engine.runAndWait()
+                    
+        except sr.WaitTimeoutError:
+            pass
+        except sr.UnknownValueError:
+            pass
+        except Exception as e:
+            time.sleep(2)
+
+threading.Thread(target=microphone_loop, daemon=True).start()
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -93,6 +140,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 "data": current_emotion,
                 "frame": current_frame_b64
             })
+            while len(chat_queue) > 0:
+                msg = chat_queue.pop(0)
+                await websocket.send_json({
+                    "type": "chat",
+                    "data": msg
+                })
             await asyncio.sleep(0.2)
     except Exception as e:
         print(f"WebSocket closed: {e}")

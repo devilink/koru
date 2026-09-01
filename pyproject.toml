@@ -22,7 +22,10 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "paho-mqtt",
-    "sentence-transformers"
+    "sentence-transformers",
+    "SpeechRecognition",
+    "PyAudio",
+    "pyttsx3"
 ]
 
 [project.optional-dependencies]
