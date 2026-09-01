@@ -1,0 +1,107 @@
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #1e272e;
+  color: #ecf0f1;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar {
+  width: 300px;
+  background-color: #2d3436;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #454d50;
+}
+
+.sidebar h2, .sidebar h3 {
+  margin-bottom: 15px;
+  color: #74b9ff;
+}
+
+.status-item {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.status-ok { color: #55efc4; }
+.status-idle { color: #ffeaa7; }
+
+.mt-4 {
+  margin-top: 30px;
+}
+
+.state-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.state-btn {
+  background-color: #454d50;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.8rem;
+}
+
+.state-btn:hover {
+  background-color: #636e72;
+}
+
+.state-btn.active {
+  background-color: #0984e3;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.privacy-btn {
+  background-color: #d63031;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.privacy-btn:hover {
+  background-color: #ff7675;
+}
+
+.face-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.alerts-section {
+  background-color: #2d3436;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.no-alerts {
+  color: #b2bec3;
+  font-style: italic;
+}
