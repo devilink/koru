@@ -1,0 +1,23 @@
+/* Append to Dashboard.css */
+
+.alerts-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.alert-item {
+  background-color: #353b48;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  border-left: 4px solid #d63031;
+}
+
+.alert-time {
+  color: #b2bec3;
+  font-size: 0.8rem;
+  margin-right: 10px;
+}

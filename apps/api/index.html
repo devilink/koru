@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Companion Bot Face</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #face { width: 100%; height: 100%; object-fit: contain; }
+        #preview { position: absolute; bottom: 10px; right: 10px; width: 150px; height: auto; border: 2px solid #333; border-radius: 8px; z-index: 10; }
+    </style>
+</head>
+<body>
+    <img id="face" src="/emotions/happy.gif" alt="Face">
+    <img id="preview" alt="Camera Preview">
+    <script>
+        const faceImg = document.getElementById("face");
+        const previewImg = document.getElementById("preview");
+        let currentEmotion = "happy";
+        
+        function connect() {
+            const ws = new WebSocket(`ws://${location.host}/ws`);
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "emotion") {
+                    if (msg.data) {
+                        let emotion = msg.data.toLowerCase();
+                        let mapped = "happy"; // default
+                        
+                        // Map hsemotion outputs to existing mochi GIFs
+                        if (emotion === "anger") mapped = "angry";
+                        else if (emotion === "happy") mapped = "happy";
+                        else if (emotion === "sad") mapped = "crying";
+                        else if (emotion === "surprise") mapped = "surprised";
+                        else if (emotion === "fear") mapped = "scared";
+                        else if (emotion === "contempt") mapped = "contempt";
+                        else if (emotion === "disgust") mapped = "sick";
+                        else if (emotion === "neutral") mapped = "blank";
+                        else mapped = emotion; // fallback
+                        
+                        if (mapped !== currentEmotion) {
+                            currentEmotion = mapped;
+                            faceImg.src = `/emotions/${currentEmotion}.gif`;
+                            faceImg.onerror = () => { faceImg.src = "/emotions/happy.gif"; };
+                        }
+                    }
+                    if (msg.frame) {
+                        previewImg.src = "data:image/jpeg;base64," + msg.frame;
+                    }
+                }
+            };
+            ws.onclose = () => setTimeout(connect, 2000);
+        }
+        connect();
+    </script>
+</body>
+</html>
