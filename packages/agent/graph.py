@@ -9,6 +9,7 @@ from packages.rag.client import LocalRAG
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
     retrieved_docs: List[dict]
+    visual_context: List[str]
     planned_action: str
     safety_passed: bool
     final_response: str
@@ -60,9 +61,13 @@ class CompanionAgent:
         
         context = ""
         if docs:
-            context = "Local Information Context:\n"
+            context += "Local Information Context:\n"
             for d in docs:
                 context += f"Source Title: {d['title']}\nContent: {d['content']}\n---\n"
+                
+        vis_ctx = state.get("visual_context", [])
+        if vis_ctx:
+            context += f"\nVisual Context (Objects you can currently see): {', '.join(vis_ctx)}\n---\n"
                 
         prompt = f"""You are a helpful, local, privacy-first companion bot. 
 You cannot control hardware directly. If asked to move or do physical tasks, politely explain you can't do that yet.
@@ -87,7 +92,12 @@ Companion:"""
             return {"safety_passed": False, "final_response": "I cannot provide that response due to safety constraints."}
         return {"safety_passed": True, "final_response": resp}
 
-    def chat(self, user_text: str) -> str:
-        state = {"messages": [HumanMessage(content=user_text)]}
+    def chat(self, user_text: str, visual_context: List[str] = None) -> str:
+        if visual_context is None:
+            visual_context = []
+        state = {
+            "messages": [HumanMessage(content=user_text)],
+            "visual_context": visual_context
+        }
         result = self.graph.invoke(state)
         return result["final_response"]

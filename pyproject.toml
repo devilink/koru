@@ -25,7 +25,8 @@ dependencies = [
     "sentence-transformers",
     "SpeechRecognition",
     "PyAudio",
-    "pyttsx3"
+    "pyttsx3",
+    "ultralytics"
 ]
 
 [project.optional-dependencies]
